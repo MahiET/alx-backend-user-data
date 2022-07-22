@@ -23,4 +23,4 @@ However, the classification of PII and non-PII is vague. Moreover, NIST doesn’
 
 <h2>What is personal data?</h2>
 
-           personal data’ means any information relating to an identified or identifiable           natural person (‘data subject’); an identifiable natural person is one who can           be identified, directly or indirectly, in particular by reference to an identi           fier such as a name, an identification number, location data, an online identi           fier or to one or more factors specific to the physical, physiological, geneti           c, mental, economic, cultural or social identity of that natural person;
+"personal data’ means any information relating to an identified or identifiable natural person (‘data subject’); an identifiable natural person is one who can be identified, directly or indirectly, in particular by reference to an identifier such as a name, an identification number, location data, an online identifier or to one or more factors specific to the physical, physiological, genetic, mental, economic, cultural or social identity of that natural person;"
