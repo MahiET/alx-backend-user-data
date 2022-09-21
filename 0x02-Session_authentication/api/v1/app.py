@@ -1,11 +1,12 @@
+es (64 sloc)  2.01 KB
+
 #!/usr/bin/env python3
 """
 Route module for the API
 """
-from api.v1.auth.basic_auth import BasicAuth
 from os import getenv
 from api.v1.views import app_views
-from flask import Flask, before_render_template, jsonify, abort, request
+from flask import Flask, jsonify, abort, request
 from flask_cors import (CORS, cross_origin)
 import os
 
@@ -13,57 +14,44 @@ import os
 app = Flask(__name__)
 app.register_blueprint(app_views)
 CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
+
 auth = None
 
-AUTH_TYPE = getenv("AUTH_TYPE")
-
-if AUTH_TYPE == "auth":
-    from api.v1.auth.auth import Auth
-
-    auth = Auth()
-elif AUTH_TYPE == "basic_auth":
+if getenv("AUTH_TYPE") == 'basic_auth':
     from api.v1.auth.basic_auth import BasicAuth
-
     auth = BasicAuth()
-elif AUTH_TYPE == "session_auth":
+elif getenv("AUTH_TYPE") == 'session_auth':
     from api.v1.auth.session_auth import SessionAuth
-
     auth = SessionAuth()
-elif AUTH_TYPE == "session_exp_auth":
+elif getenv("AUTH_TYPE") == 'session_exp_auth':
     from api.v1.auth.session_exp_auth import SessionExpAuth
-
     auth = SessionExpAuth()
-elif AUTH_TYPE == "session_db_auth":
+elif getenv("AUTH_TYPE") == 'session_db_auth':
     from api.v1.auth.session_db_auth import SessionDBAuth
-
     auth = SessionDBAuth()
+else:
+    from api.v1.auth.auth import Auth
+    auth = Auth()
 
 
 @app.before_request
-def before_request() -> str:
-    """ Before Request Handler
-    Requests Validation
+def request_filter() -> None:
+    """ Checks if request needs authorization
     """
-    if auth is None:
-        return
+    excluded_paths = [
+        '/api/v1/status/',
+        '/api/v1/unauthorized/',
+        '/api/v1/forbidden/',
+        '/api/v1/auth_session/login/'
+        ]
 
-    excluded_paths = ['/api/v1/status/',
-                      '/api/v1/unauthorized/',
-                      '/api/v1/forbidden/',
-                      '/api/v1/auth_session/login/']
-
-    if not auth.require_auth(request.path, excluded_paths):
-        return
-
-    if auth.authorization_header(request) is None \
-            and auth.session_cookie(request) is None:
-        abort(401)
-
-    current_user = auth.current_user(request)
-    if current_user is None:
-        abort(403)
-
-    request.current_user = current_user
+    if auth and auth.require_auth(request.path, excluded_paths):
+        if auth.authorization_header(request) is None and auth.session_cookie(
+                request) is None:
+            abort(401)
+        if auth.current_user(request) is None:
+            abort(403)
+        request.current_user = auth.current_user(request)
 
 
 @app.errorhandler(404)
@@ -82,9 +70,7 @@ def unauthorized(error) -> str:
 
 @app.errorhandler(403)
 def forbidden(error) -> str:
-    """
-    handle forbidden error
-    :return:
+    """ Forbidden handler
     """
     return jsonify({"error": "Forbidden"}), 403
 
